@@ -39,7 +39,7 @@ elif ed_config.dataset == "ere":
 
 
 # set GPU device
-# torch.cuda.set_device(ed_config.gpu_device)
+torch.cuda.set_device(ed_config.gpu_device)
 
 np.random.seed(ed_config.seed)
 torch.manual_seed(ed_config.seed)
