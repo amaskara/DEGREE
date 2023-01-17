@@ -19,6 +19,8 @@ if config.dataset == "ace05e" or config.dataset == "ace05ep":
     from template_generate_ace import eve_template_generator
 elif config.dataset == "ere":
     from template_generate_ere import eve_template_generator
+elif config.dataset == "maven":
+    from template_generate_maven import eve_template_generator
 
 # fix random seed
 random.seed(config.seed)

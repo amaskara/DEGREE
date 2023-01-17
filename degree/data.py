@@ -119,6 +119,8 @@ class EEDataset(Dataset):
             token_lens = inst['token_lens']
             
             piece_idxs = self.tokenizer.convert_tokens_to_ids(pieces)
+            print(token_lens)
+            print(piece_idxs)
             assert sum(token_lens) == len(piece_idxs)
                         
             triggers = [(e['trigger']['start'], e['trigger']['end'], e['event_type']) for e in events]
