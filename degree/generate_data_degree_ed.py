@@ -21,6 +21,8 @@ elif config.dataset == "ere":
     from template_generate_ere import eve_template_generator
 elif config.dataset == "maven":
     from template_generate_maven import eve_template_generator
+elif config.dataset == "maven_v2":
+    from template_generate_maven_v2 import eve_template_generator
 
 # fix random seed
 random.seed(config.seed)
@@ -29,7 +31,8 @@ np.random.seed(config.seed)
 # logger
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(message)s', datefmt='[%Y-%m-%d %H:%M:%S]')
 logger = logging.getLogger(__name__)
-logger.info(f"\n{pprint.pformat(vars(config), indent=4)}")
+
+logger.info(f"\n{pprint.pformat(vars(config), indent=4) }")
 
 def generate_data(data_set, vocab, config):
     inputs = []

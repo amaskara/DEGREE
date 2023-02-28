@@ -191,77 +191,7 @@ ed_model.load_state_dict(torch.load(args.ed_model, map_location=f'cuda:{ed_confi
 ed_model.cuda(device=ed_config.gpu_device)
 ed_model.eval()
 
-# eval dev set
-if not args.no_dev:
-    progress = tqdm.tqdm(total=dev_batch_num, ncols=75, desc='Dev')
-    dev_gold_triggers, dev_pred_triggers = [], []
-    for batch in DataLoader(dev_set, batch_size=ed_config.eval_batch_size, shuffle=False, collate_fn=dev_set.collate_fn):
-        progress.update(1)
-        
-        # trigger predictions
-        if args.gold_trigger:
-            p_triggers = batch.triggers
-        else:
-            p_triggers = [[] for _ in range(len(batch.tokens))]
-            for event_type in vocab['event_type_itos']:
-                theclass = getattr(sys.modules[template_file], event_type.replace(':', '_').replace('-', '_'), False)
-                
-                inputs = []
-                for tokens in batch.tokens:
-                    template = theclass(ed_config.input_style, ed_config.output_style, tokens, event_type)
-                    inputs.append(template.generate_input_str(''))
-             
-                # pred_text = ed_model.predict(batch, max_length=ed_config.max_output_length)
 
-                inputs = ed_tokenizer(inputs, return_tensors='pt', padding=True, max_length=ed_config.max_length)
-                enc_idxs = inputs['input_ids'].cuda()
-                # print(enc_idxs)
-                enc_attn = inputs['attention_mask'].cuda()
-                
-                outputs = ed_model.model.generate(input_ids=enc_idxs, attention_mask=enc_attn, num_beams=ed_config.beam_size, max_length=ed_config.max_output_length)
-                final_outputs = [ed_tokenizer.decode(output, skip_special_tokens=True, clean_up_tokenization_spaces=True) for output in outputs]
-                # final_outputs = []
-                # for bid in range(len(enc_idxs)):
-                #     output_sentence = ed_tokenizer.decode(outputs[bid], skip_special_tokens=True, clean_up_tokenization_spaces=True)
-                #     final_outputs.append(output_sentence)
-                
-                
-                for bid, (tokens, p_text) in enumerate(zip(batch.tokens, final_outputs)):
-                    template = theclass(ed_config.input_style, ed_config.output_style, tokens, event_type)
-                    # print(p_text)
-                    # if("<Trigger>" not in p_text):
-                    #     print(template.get_keywords())
-                    pred_object = template.decode(p_text)
-                    # print(template.get_keywords())
-                    triggers_ = [mention+(event_type, ) for span, _, _ in pred_object for mention in get_span_idx_tri(batch.piece_idxs[bid], batch.token_start_idxs[bid], span, ed_tokenizer)]
-                    triggers_ = [t for t in triggers_ if t[0] != -1]
-                    triggers_ = list(set(triggers_))
-                    p_triggers[bid].extend(triggers_)
-                
-            # if ed_config.ignore_first_header:
-            #     for bid, wnd_id in enumerate(batch.wnd_ids):
-            #         if int(wnd_id.split('-')[-1]) < 4:
-            #             p_triggers[bid] = []
-        
-        
-        dev_gold_triggers.extend(batch.triggers)
-        dev_pred_triggers.extend(p_triggers)
-
-                
-    progress.close()
-    
-    # calculate scores
-    dev_scores = cal_scores(dev_gold_triggers, dev_pred_triggers)
-    
-    print("---------------------------------------------------------------------")
-    print('Trigger I  - P: {:6.2f} ({:4d}/{:4d}), R: {:6.2f} ({:4d}/{:4d}), F: {:6.2f}'.format(
-        dev_scores['tri_id'][3] * 100.0, dev_scores['tri_id'][2], dev_scores['tri_id'][1], 
-        dev_scores['tri_id'][4] * 100.0, dev_scores['tri_id'][2], dev_scores['tri_id'][0], dev_scores['tri_id'][5] * 100.0))
-    print('Trigger C  - P: {:6.2f} ({:4d}/{:4d}), R: {:6.2f} ({:4d}/{:4d}), F: {:6.2f}'.format(
-        dev_scores['tri_cls'][3] * 100.0, dev_scores['tri_cls'][2], dev_scores['tri_cls'][1], 
-        dev_scores['tri_cls'][4] * 100.0, dev_scores['tri_cls'][2], dev_scores['tri_cls'][0], dev_scores['tri_cls'][5] * 100.0))
-    print("---------------------------------------------------------------------")
-    
     
 # test set
 progress = tqdm.tqdm(total=test_batch_num, ncols=75, desc='Test')
